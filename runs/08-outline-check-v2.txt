@@ -1,0 +1,7 @@
+# check_outline 報告
+大綱頁數 17｜要定義的名詞 3
+錯誤 3
+  ✗ O1 第 1 頁沒有指到任何 wiki 頁面：1. 封面 — overview
+  ✗ O1 第 16 頁沒有指到任何 wiki 頁面：16. 小測驗（3 題） — rag.md、comparis
+  ✗ O2 名詞「chunk」在 concepts/chunking.md 裡沒有定義句（需要「- chunk：…」）
+結果：FAIL ❌ 回 N3/N1 補 wiki

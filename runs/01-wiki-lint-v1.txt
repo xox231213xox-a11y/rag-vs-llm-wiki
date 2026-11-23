@@ -1,0 +1,12 @@
+# lint_wiki 報告
+頁數 21｜重點列 122（有標記 122）｜檢查數字 60｜相對連結 78｜來源卡 7
+錯誤 4
+  ✗ L4 frontmatter sources 少了 ['S1']: wiki/concepts/llm-limitations.md
+  ✗ L4 frontmatter sources 少了 ['S5']: wiki/concepts/parametric-memory.md
+  ✗ L4 frontmatter sources 少了 ['S1']: wiki/concepts/rag.md
+  ✗ L4 frontmatter sources 少了 ['S2']: wiki/sources/s05-wikipedia-rag.md
+結果：FAIL ❌
+
+# N4 人工語意檢查（LLM 對照 raw 來源卡逐條讀）
+  ✗ M1 wiki/comparisons/rag-vs-llm-wiki.md：「知識庫很小時，兩者都可能不需要」— S4 只說不需要 RAG，沒有提到 LLM Wiki → 說得比來源多
+  ✗ M2 wiki/sources/s05-wikipedia-rag.md：S5 的摘要頁引用了 [S2]，但 ingest 順序上 S2 還沒進來 → 來源摘要頁只引用自己的來源

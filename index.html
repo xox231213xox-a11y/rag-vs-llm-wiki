@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>用 LLM Wiki 做教學 HTML 簡報｜RAG vs LLM Wiki</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#f4efe6;--card:#fffdf8;--ink:#1d1b18;--muted:#6b655c;--line:#ddd3c3;--rag:#1f6f78;--rag-soft:#dcecec;--wiki:#b5601a;--wiki-soft:#f6e3cf;--warn:#a8402c;--warn-soft:#f5dcd5;--ok:#3d7a3a;
+--serif:"Noto Serif TC","Noto Serif CJK TC",serif;--sans:"Noto Sans TC","Noto Sans CJK TC",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.75}
+.wrap{max-width:1040px;margin:0 auto;padding:0 28px}
+header{padding:64px 0 36px;border-bottom:1px solid var(--line)}
+.kicker{font-family:var(--mono);font-size:13px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}
+h1{font-family:var(--serif);font-weight:900;font-size:44px;line-height:1.25;margin:12px 0 14px}
+h1 em{font-style:normal;color:var(--wiki)}
+.who{color:var(--muted)}
+section{padding:44px 0;border-bottom:1px solid var(--line)}
+h2{font-family:var(--serif);font-size:30px;margin-bottom:16px}
+h2 .n{font-family:var(--mono);font-size:15px;color:var(--wiki);margin-right:10px;vertical-align:middle}
+h3{font-size:19px;margin:22px 0 8px}
+p+p{margin-top:10px}
+a{color:var(--rag)}
+code{font-family:var(--mono);font-size:.88em;background:#ece5d8;padding:1px 6px;border-radius:5px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-top:14px}
+.card{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:18px 20px;text-decoration:none;color:var(--ink);display:block}
+a.card:hover{border-color:var(--wiki)}
+.card b{display:block;font-size:18px;margin-bottom:4px}
+.card span{font-size:15px;color:var(--muted);line-height:1.55;display:block}
+.card.main{background:var(--wiki-soft);border-color:var(--wiki)}
+.card.rag{background:var(--rag-soft);border-color:var(--rag)}
+table{width:100%;border-collapse:collapse;font-size:15px;background:var(--card);border-radius:12px;overflow:hidden;margin-top:10px}
+th,td{padding:8px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{background:#ece5d8;font-size:14px}
+td.c{white-space:nowrap}
+.fail{color:var(--warn);font-weight:700}.pass{color:var(--ok);font-weight:700}
+.tag{font-family:var(--mono);font-size:12px;border:1px solid var(--line);border-radius:99px;padding:1px 7px;background:#fff;color:var(--muted);white-space:nowrap}
+ul.plain{padding-left:22px}
+ul.plain li{margin:4px 0}
+.diagram{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:14px;margin-top:12px;overflow-x:auto}
+.diagram svg{display:block;min-width:900px;width:100%;height:auto}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.two figure{background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:10px}
+.two img{width:100%;display:block;border-radius:6px;border:1px solid var(--line)}
+figcaption{font-size:14px;color:var(--muted);margin-top:6px}
+.bar{display:grid;grid-template-columns:200px 1fr 40px;gap:12px;align-items:center;margin:6px 0;font-size:15px}
+.bar .t{height:18px;background:#e9e2d5;border-radius:5px;overflow:hidden}
+.bar .f{height:100%;background:var(--warn)}
+footer{padding:36px 0 60px;color:var(--muted);font-size:14px}
+@media (max-width:700px){h1{font-size:32px}.two{grid-template-columns:1fr}.bar{grid-template-columns:130px 1fr 30px}}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <div class="kicker">生成式 AI 課程作業 · LLM Wiki × 教學 HTML 簡報</div>
+  <h1>用 LLM Wiki 做一份教學簡報：<br><em>RAG vs LLM Wiki</em></h1>
+  <p class="who">北科 115378024 工管碩一 連顥哲 · 2026/11/23</p>
+</div></header>
+
+<section><div class="wrap">
+  <h2><span class="n">01</span>LLM Wiki 主題與簡介</h2>
+  <p><b>主題：RAG 與 LLM Wiki——AI 怎麼「記住」知識？</b></p>
+  <p>LLM 只知道訓練時學到的東西，還會幻覺。業界有兩種把知識放在模型外面的做法：<b>RAG</b>（被問的時候才去原始資料找）和 2026 年 Karpathy 提出的 <b>LLM Wiki</b>（資料進來時就讓 LLM 整理成互相連結的 wiki）。這份 Wiki 用 LLM Wiki 的方法，整理 7 篇來源（RAG 原始論文、RAG 綜述、Anthropic 技術文、維基百科、Karpathy 原文、DataCamp 分析、一篇批評文），用來教不熟悉的人這兩種做法的差別。</p>
+  <p>也就是說：<b>這次是用 LLM Wiki 來教 LLM Wiki。</b></p>
+</div></section>
+
+<section><div class="wrap">
+  <h2><span class="n">02</span>成果連結</h2>
+  <div class="grid">
+    <a class="card main" href="slides/"><b>▶ 教學 HTML 簡報</b><span>17 頁，← → 鍵切換。每頁下方標出它來自哪些 Wiki 頁面。</span></a>
+    <a class="card rag" href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/wiki/index.md"><b>📚 LLM Wiki（目錄 index.md）</b><span>23 頁：來源摘要 7、概念 11、比較 1、總覽、簡報大綱。</span></a>
+    <a class="card" href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/wiki/log.md"><b>📝 Wiki 操作紀錄 log.md</b><span>每次 ingest、討論、lint、查詢都有記錄。</span></a>
+    <a class="card" href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/CLAUDE.md"><b>⚙️ Schema（CLAUDE.md）</b><span>Wiki 規則與 graph v2 的完整定義、版本歷史。</span></a>
+    <a class="card" href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/tree/main/raw"><b>🗂 Raw 來源卡</b><span>7 篇來源的出處與擷取重點（不轉載原文）。</span></a>
+    <a class="card" href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/tree/main/runs"><b>🔎 檢查紀錄 runs/</b><span>12 份 lint／檢查報告＋兩版截圖。</span></a>
+  </div>
+  <p style="margin-top:14px">Repo：<a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki">github.com/xox231213xox-a11y/rag-vs-llm-wiki</a>（結構：<code>raw/</code> 原始資料 · <code>wiki/</code> LLM 維護的知識 · <code>CLAUDE.md</code> schema · <code>slides/</code> 簡報 · <code>scripts/</code> 檢查腳本 · <code>runs/</code> 執行紀錄）</p>
+</div></section>
+
+<section><div class="wrap">
+  <h2><span class="n">03</span>Loop / Graph 設計（v2）</h2>
+  <p>取得資料 → 討論 → 編譯進 Wiki → <b>檢查</b> → 查詢 Wiki → 整理大綱 → <b>檢查</b> → 產生簡報 → <b>檢查</b> → 發布。紅框是檢查節點，虛線是失敗時退回的路徑。</p>
+  <div class="diagram">
+<svg viewBox="0 0 960 585" xmlns="http://www.w3.org/2000/svg" font-family="Noto Sans TC, Noto Sans CJK TC, sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#1d1b18"/></marker>
+    <marker id="r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#a8402c"/></marker>
+    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#b5601a"/></marker>
+  </defs>
+  <style>
+    .nd{fill:#fffdf8;stroke:#ddd3c3;stroke-width:1.5}
+    .hm{fill:#f6e3cf;stroke:#b5601a;stroke-width:1.5}
+    .ck{fill:#f5dcd5;stroke:#a8402c;stroke-width:2}
+    .t1{font-size:15px;font-weight:700;fill:#1d1b18}
+    .t2{font-size:12px;fill:#6b655c}
+    .ln{stroke:#1d1b18;stroke-width:1.5;fill:none}
+    .fl{stroke:#a8402c;stroke-width:1.5;fill:none;stroke-dasharray:5 4}
+    .lp{stroke:#b5601a;stroke-width:1.5;fill:none}
+    .lb{font-size:12px;fill:#a8402c;font-weight:700}
+    .lo{font-size:12px;fill:#b5601a;font-weight:700}
+    .v2{font-size:11px;font-weight:700;fill:#fff}
+    .row{font-size:12px;fill:#6b655c;font-family:JetBrains Mono,monospace;letter-spacing:.08em}
+  </style>
+  <text x="20" y="62" class="row">INGEST LOOP</text>
+  <text x="20" y="262" class="row">QUERY → OUTLINE</text>
+  <text x="20" y="452" class="row">GENERATE</text>
+
+  <!-- row 1 -->
+  <rect x="140" y="80" width="160" height="66" rx="12" class="nd"/><text x="220" y="108" text-anchor="middle" class="t1">N1 取得資料</text><text x="220" y="128" text-anchor="middle" class="t2">raw 來源卡</text>
+  <rect x="340" y="80" width="160" height="66" rx="12" class="hm"/><text x="420" y="108" text-anchor="middle" class="t1">N2 討論（人）</text><text x="420" y="128" text-anchor="middle" class="t2">勾選要強調的重點</text>
+  <rect x="540" y="80" width="160" height="66" rx="12" class="nd"/><text x="620" y="108" text-anchor="middle" class="t1">N3 編譯進 Wiki</text><text x="620" y="128" text-anchor="middle" class="t2">每條對照 raw</text>
+  <rect x="740" y="80" width="160" height="66" rx="12" class="ck"/><text x="820" y="108" text-anchor="middle" class="t1">N4 Lint</text><text x="820" y="128" text-anchor="middle" class="t2">lint_wiki.py＋語意</text>
+  <rect x="826" y="70" width="62" height="20" rx="10" fill="#a8402c"/><text x="857" y="84" text-anchor="middle" class="v2">v2 移入</text>
+  <path d="M300 113H336" class="ln" marker-end="url(#a)"/>
+  <path d="M500 113H536" class="ln" marker-end="url(#a)"/>
+  <path d="M700 113H736" class="ln" marker-end="url(#a)"/>
+  <!-- N4 fail -> N3 -->
+  <path d="M768 80 C768 64 668 64 668 78" class="fl" marker-end="url(#r)"/><text x="718" y="58" text-anchor="middle" class="lb">失敗 → 回 N3</text>
+  <!-- next source loop -->
+  <path d="M820 80 V40 H220 V76" class="lp" marker-end="url(#g)"/><text x="520" y="34" text-anchor="middle" class="lo">通過 → 下一篇來源（7 篇各跑一次）</text>
+
+  <!-- row1 -> row2 -->
+  <path d="M900 113 H930 V228 H220 V276" class="ln" marker-end="url(#a)"/><text x="400" y="222" text-anchor="middle" class="t2">7 篇都 ingest 完</text>
+
+  <!-- row 2 -->
+  <rect x="140" y="280" width="160" height="66" rx="12" class="nd"/><text x="220" y="308" text-anchor="middle" class="t1">N5 查詢 Wiki</text><text x="220" y="328" text-anchor="middle" class="t2">先讀 index.md</text>
+  <rect x="340" y="280" width="160" height="66" rx="12" class="nd"/><text x="420" y="308" text-anchor="middle" class="t1">N6 整理重點</text><text x="420" y="328" text-anchor="middle" class="t2">大綱＋名詞表，存回 Wiki</text>
+  <rect x="540" y="280" width="160" height="66" rx="12" class="ck"/><text x="620" y="308" text-anchor="middle" class="t1">N6c 大綱檢查</text><text x="620" y="328" text-anchor="middle" class="t2">check_outline.py</text>
+  <rect x="626" y="270" width="62" height="20" rx="10" fill="#a8402c"/><text x="657" y="284" text-anchor="middle" class="v2">v2 新增</text>
+  <path d="M300 313H336" class="ln" marker-end="url(#a)"/>
+  <path d="M500 313H536" class="ln" marker-end="url(#a)"/>
+  <!-- N6c fail -> N3 -->
+  <path d="M600 280 V150" class="fl" marker-end="url(#r)"/><text x="612" y="190" class="lb">缺內容 → 回 N3 從 raw 補</text><text x="612" y="206" class="lb">（raw 也沒有 → 回 N1 找新來源）</text>
+
+  <!-- row2 -> row3 -->
+  <path d="M620 346 V420 H220 V466" class="ln" marker-end="url(#a)"/><text x="430" y="412" text-anchor="middle" class="t2">通過才准生成</text>
+
+  <!-- row 3 -->
+  <rect x="140" y="470" width="160" height="66" rx="12" class="nd"/><text x="220" y="498" text-anchor="middle" class="t1">N7 產生簡報</text><text x="220" y="518" text-anchor="middle" class="t2">只能用大綱與 Wiki</text>
+  <rect x="340" y="470" width="160" height="66" rx="12" class="ck"/><text x="420" y="498" text-anchor="middle" class="t1">N8 檢查簡報</text><text x="420" y="518" text-anchor="middle" class="t2">C1–C7＋語意＋截圖</text>
+  <rect x="540" y="470" width="160" height="66" rx="12" class="nd"/><text x="620" y="498" text-anchor="middle" class="t1">N9 發布</text><text x="620" y="518" text-anchor="middle" class="t2">GitHub Pages</text>
+  <path d="M300 503H336" class="ln" marker-end="url(#a)"/>
+  <path d="M500 503H536" class="ln" marker-end="url(#a)"/>
+  <path d="M390 536 C390 562 250 562 250 540" class="fl" marker-end="url(#r)"/><text x="320" y="578" text-anchor="middle" class="lb">失敗 → 回 N7</text>
+
+  <!-- legend -->
+  <rect x="740" y="470" width="18" height="14" rx="3" class="nd"/><text x="766" y="482" class="t2">一般節點</text>
+  <rect x="740" y="492" width="18" height="14" rx="3" class="hm"/><text x="766" y="504" class="t2">人參與（先討論後生成）</text>
+  <rect x="740" y="514" width="18" height="14" rx="3" class="ck"/><text x="766" y="526" class="t2">檢查節點</text>
+</svg>
+  </div>
+
+  <h3>哪些步驟會重複執行？</h3>
+  <ul class="plain">
+    <li><b>Ingest 迴圈（N1→N4）</b>：每篇來源跑一次，共 7 次。順序刻意安排成 S5→S2→S3→S4→S1→S6→S7：先 RAG 基礎、再 LLM Wiki、最後放批評文，避免最早的來源決定整個 Wiki 的框架（ingestion bias，來自 S7）。</li>
+    <li><b>修正迴圈</b>：N4 失敗回 N3、N6c 失敗回 N3/N1、N8 失敗回 N7，一直跑到檢查通過。</li>
+  </ul>
+  <h3>哪些地方需要檢查或重新生成？</h3>
+  <table>
+    <tr><th>檢查節點</th><th>檢查什麼</th><th>不通過時</th></tr>
+    <tr><td class="c">N4 Lint</td><td>frontmatter 齊全、每條重點都有 [Sx] 來源標記、標記的來源存在、數字能在 raw 來源卡找到、連結不斷、沒有孤兒頁、log 格式；再加 LLM 逐條對照 raw 的語意檢查</td><td>回 N3 重寫該頁</td></tr>
+    <tr><td class="c">N6c 大綱檢查</td><td>大綱每頁都指到存在的 Wiki 頁；「要定義的名詞」每個在 Wiki 都有定義句</td><td>回 N3 從 raw 補；raw 也沒有就回 N1 找新來源</td></tr>
+    <tr><td class="c">N8 檢查簡報</td><td>C1 每頁有 data-wiki 且頁面存在 · C2 來源標記對得上 · C3 數字在 Wiki 找得到 · C4/C7 名詞在名詞表且 Wiki 有 · C5 頁數與大綱一致 · C6 大綱用到的頁面都有被引用；加上逐頁語意對照、截圖量版面、人工看截圖</td><td>回 N7 重新生成該頁</td></tr>
+  </table>
+  <h3>為什麼這樣設計？</h3>
+  <ul class="plain">
+    <li><b>先討論、後生成</b>：Wiki 該強調什麼由人決定（N2），AI 只負責整理；兩輪討論共 7 篇，結果都寫進 log。</li>
+    <li><b>每一句都能追回來源</b>：Wiki 每條重點標 [Sx]、簡報每頁標 data-wiki，所以「簡報 → Wiki → raw → 原文」可以一路追回去，檢查也才能自動化。</li>
+    <li><b>大綱存回 Wiki</b>：依照 Karpathy 的做法，好的查詢結果要存回 Wiki，大綱本身也受 lint 檢查。</li>
+    <li><b>越早檢查越便宜</b>：錯誤在哪個節點產生，就盡量在那個節點後面立刻抓到（見下方 v1 → v2）。</li>
+  </ul>
+  <h3>v1 → v2 改了什麼</h3>
+  <table>
+    <tr><th></th><th>v1（第一次執行時）</th><th>v2（執行後修改）</th></tr>
+    <tr><td class="c">Wiki lint</td><td>7 篇全部 ingest 完才跑一次</td><td>每 ingest 一篇就跑（移進迴圈）</td></tr>
+    <tr><td class="c">大綱</td><td>寫完直接產生簡報</td><td>加「要定義的名詞」表＋N6c 大綱檢查，通過才准生成</td></tr>
+    <tr><td class="c">N3 編譯</td><td>直接寫</td><td>每條對照 raw 來源卡，不准用模型自己的知識補</td></tr>
+    <tr><td class="c">N8 簡報檢查</td><td>C1–C6；截圖腳本有 bug</td><td>加 C7（名詞必須在名詞表）；修好截圖腳本</td></tr>
+  </table>
+</div></section>
+
+<section><div class="wrap">
+  <h2><span class="n">04</span>Wiki ↔ 簡報對應</h2>
+  <p>每一頁簡報都標了它引用的 Wiki 頁面（點簡報頁尾的連結也可以直接跳到 Wiki）：</p>
+  <table>
+  <tr><th>頁</th><th>簡報標題</th><th>引用的 Wiki 頁面</th><th>來源</th></tr>
+  <tr><td><a href="slides/#1">1</a></td><td>AI 怎麼「記住」知識？</td><td><a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/wiki/overview.md">overview.md</a> <a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/wiki/index.md">index.md</a></td><td><span class="tag">[S1]</span> <span class="tag">[S2]</span> <span class="tag">[S5]</span></td></tr>
+  <tr><td><a href="slides/#2">2</a></td><td>今天的學習目標</td><td><a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/wiki/syntheses/slide-outline.md">syntheses/slide-outline.md</a></td><td><span class="tag">[S3]</span> <span class="tag">[S5]</span> <span class="tag">[S6]</span></td></tr>
+  <tr><td><a href="slides/#3">3</a></td><td>LLM 很聰明，但有四個毛病</td><td><a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/wiki/concepts/llm-limitations.md">concepts/llm-limitations.md</a></td><td><span class="tag">[S2]</span> <span class="tag">[S3]</span> <span class="tag">[S5]</span></td></tr>
+  <tr><td><a href="slides/#4">4</a></td><td>圖書館員vs百科全書</td><td><a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/wiki/syntheses/slide-outline.md">syntheses/slide-outline.md</a> <a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/wiki/overview.md">overview.md</a></td><td><span class="tag">[比喻]</span></td></tr>
+  <tr><td><a href="slides/#5">5</a></td><td>RAG是什麼？</td><td><a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/wiki/concepts/rag.md">concepts/rag.md</a> <a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/wiki/concepts/parametric-memory.md">concepts/parametric-memory.md</a></td><td><span class="tag">[S2]</span> <span class="tag">[S5]</span></td></tr>
+  <tr><td><a href="slides/#6">6</a></td><td>RAG 怎麼運作？四個步驟</td><td><a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/wiki/concepts/rag.md">concepts/rag.md</a> <a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/wiki/concepts/embedding.md">concepts/embedding.md</a> <a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/wiki/concepts/chunking.md">concepts/chunking.md</a></td><td><span class="tag">[S4]</span> <span class="tag">[S5]</span></td></tr>
+  <tr><td><a href="slides/#7">7</a></td><td>RAG 的好處與限制</td><td><a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/wiki/concepts/rag.md">concepts/rag.md</a></td><td><span class="tag">[S1]</span> <span class="tag">[S5]</span></td></tr>
+  <tr><td><a href="slides/#8">8</a></td><td>切成小塊，上下文就不見了</td><td><a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/wiki/concepts/chunking.md">concepts/chunking.md</a></td><td><span class="tag">[S4]</span></td></tr>
+  <tr><td><a href="slides/#9">9</a></td><td>改良：先替每個 chunk 補上脈絡</td><td><a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/wiki/concepts/contextual-retrieval.md">concepts/contextual-retrieval.md</a> <a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/wiki/concepts/rag-paradigms.md">concepts/rag-paradigms.md</a></td><td><span class="tag">[S3]</span> <span class="tag">[S4]</span></td></tr>
+  <tr><td><a href="slides/#10">10</a></td><td>LLM Wiki：換個思路，讓知識會累積</td><td><a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/wiki/concepts/llm-wiki.md">concepts/llm-wiki.md</a></td><td><span class="tag">[S1]</span> <span class="tag">[S6]</span></td></tr>
+  <tr><td><a href="slides/#11">11</a></td><td>三層架構</td><td><a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/wiki/concepts/llm-wiki.md">concepts/llm-wiki.md</a> <a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/wiki/syntheses/slide-outline.md">syntheses/slide-outline.md</a></td><td><span class="tag">[S1]</span></td></tr>
+  <tr><td><a href="slides/#12">12</a></td><td>三個操作：Ingest · Query · Lint</td><td><a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/wiki/concepts/wiki-operations.md">concepts/wiki-operations.md</a></td><td><span class="tag">[S1]</span> <span class="tag">[S6]</span></td></tr>
+  <tr><td><a href="slides/#13">13</a></td><td>RAGvsLLM Wiki</td><td><a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/wiki/comparisons/rag-vs-llm-wiki.md">comparisons/rag-vs-llm-wiki.md</a></td><td><span class="tag">[S6]</span></td></tr>
+  <tr><td><a href="slides/#14">14</a></td><td>LLM Wiki 的四個風險</td><td><a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/wiki/concepts/llm-wiki-risks.md">concepts/llm-wiki-risks.md</a> <a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/wiki/concepts/ingestion-bias.md">concepts/ingestion-bias.md</a></td><td><span class="tag">[S6]</span> <span class="tag">[S7]</span></td></tr>
+  <tr><td><a href="slides/#15">15</a></td><td>這份簡報本身，就是用 LLM Wiki 做的</td><td><a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/wiki/index.md">index.md</a> <a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/wiki/log.md">log.md</a> <a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/wiki/concepts/ingestion-bias.md">concepts/ingestion-bias.md</a></td><td><span class="tag">[討論]</span></td></tr>
+  <tr><td><a href="slides/#16">16</a></td><td>考考你（點選答案）</td><td><a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/wiki/concepts/rag.md">concepts/rag.md</a> <a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/wiki/comparisons/rag-vs-llm-wiki.md">comparisons/rag-vs-llm-wiki.md</a> <a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/wiki/concepts/ingestion-bias.md">concepts/ingestion-bias.md</a></td><td><span class="tag">[S5]</span> <span class="tag">[S6]</span> <span class="tag">[S7]</span></td></tr>
+  <tr><td><a href="slides/#17">17</a></td><td>三句話帶走</td><td><a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/wiki/overview.md">overview.md</a> <a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/wiki/index.md">index.md</a></td><td><span class="tag">[S1]</span> <span class="tag">[S2]</span> <span class="tag">[S3]</span> <span class="tag">[S4]</span> <span class="tag">[S5]</span> <span class="tag">[S6]</span> <span class="tag">[S7]</span></td></tr>
+  </table>
+</div></section>
+
+<section><div class="wrap">
+  <h2><span class="n">05</span>一次實際執行的紀錄</h2>
+  <p>下表照時間順序列出這次執行的每一步，紀錄檔都在 <a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/tree/main/runs">runs/</a>。</p>
+  <table>
+    <tr><th>#</th><th>節點</th><th>做了什麼</th><th>結果</th><th>紀錄</th></tr>
+    <tr><td>1</td><td class="c">N1 取得資料</td><td>7 篇來源寫成 raw 來源卡</td><td class="pass">完成</td><td>raw/</td></tr>
+    <tr><td>2</td><td class="c">N2 討論</td><td>兩輪討論，每篇列 3–4 個重點讓人勾選；「Embedding 是什麼」「何時用哪個」被選為不強調；比喻選「圖書館員 vs 百科全書」</td><td class="pass">完成</td><td>log.md</td></tr>
+    <tr><td>3</td><td class="c">N3 編譯 ×7</td><td>依序 ingest S5→S2→S3→S4→S1→S6→S7，產生 21 頁</td><td class="pass">完成</td><td>log.md</td></tr>
+    <tr><td>4</td><td class="c">N4 Lint</td><td>腳本：4 頁 frontmatter 的 sources 沒同步（後來的來源改了舊頁面）。語意：比較頁說得比 S4 多；S5 摘要頁引用了還沒 ingest 的 S2</td><td class="fail">FAIL（6）</td><td><a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/runs/01-wiki-lint-v1.txt">01</a></td></tr>
+    <tr><td>5</td><td class="c">N3 → N4</td><td>修正後重跑 lint</td><td class="pass">PASS</td><td><a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/runs/02-wiki-lint-v1-rerun.txt">02</a></td></tr>
+    <tr><td>6</td><td class="c">N5 → N6 → N7</td><td>查詢 Wiki、大綱存回 Wiki、產生簡報 v1（17 頁）</td><td class="pass">完成</td><td>log.md</td></tr>
+    <tr><td>7</td><td class="c">N8 check_slides</td><td>第 6 頁「向量資料庫」在 Wiki 找不到</td><td class="fail">FAIL（1）</td><td><a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/runs/03-slides-check-v1.txt">03</a></td></tr>
+    <tr><td>8</td><td class="c">N8 截圖</td><td>回報 PASS，但 17 頁數字一模一樣 → 腳本一直量第 1 頁，是<b>假 PASS</b></td><td class="fail">工具 bug</td><td><a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/runs/04-slides-layout-v1-FALSE-PASS.txt">04</a></td></tr>
+    <tr><td>9</td><td class="c">N8 截圖（修正）</td><td>修好換頁與量測方式後重跑</td><td class="pass">PASS</td><td><a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/runs/05-slides-layout-v1-rerun.txt">05</a></td></tr>
+    <tr><td>10</td><td class="c">N8 語意＋看截圖</td><td>3 處內容不在 Wiki（embedding、向量資料庫的定義、人與 LLM 分工）＋3 個版面問題</td><td class="fail">FAIL（6）</td><td><a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/runs/06-slides-review-v1.txt">06</a></td></tr>
+    <tr><td>11</td><td class="c">N2 討論</td><td>問人：embedding 要補進 Wiki 還是從簡報拿掉？→ 決定補一句定義</td><td class="pass">完成</td><td>log.md</td></tr>
+    <tr><td>12</td><td class="c">N3 → N4</td><td>從 S5、S4 補 embedding.md；對照 raw 時又抓到自己多寫一句（問題也轉成向量）；立刻 lint</td><td class="pass">PASS</td><td><a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/runs/07-wiki-lint-after-embedding.txt">07</a></td></tr>
+    <tr><td>13</td><td class="c">改 graph</td><td>v1 → v2（寫進 CLAUDE.md 版本歷史）</td><td class="pass">完成</td><td>CLAUDE.md</td></tr>
+    <tr><td>14</td><td class="c">N6c 大綱檢查</td><td>新節點第一次跑：大綱兩頁路徑不完整；chunk 在 Wiki 沒有定義句</td><td class="fail">FAIL（3）</td><td><a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/runs/08-outline-check-v2.txt">08</a></td></tr>
+    <tr><td>15</td><td class="c">N3 → N6c → N4</td><td>補 chunk 定義、修大綱路徑後重跑</td><td class="pass">PASS</td><td><a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/runs/09-outline-check-v2-rerun.txt">09</a> <a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/runs/10-wiki-lint-v2.txt">10</a></td></tr>
+    <tr><td>16</td><td class="c">N7 → N8</td><td>產生簡報 v2；C1–C7、截圖版面、人工看截圖</td><td class="pass">PASS</td><td><a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/runs/11-slides-check-v2.txt">11</a> <a href="https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/runs/12-slides-layout-v2.txt">12</a></td></tr>
+  </table>
+
+  <h3>錯誤出在哪個節點？（依錯誤「產生」的節點統計，重複的合併）</h3>
+  <div class="bar"><span>N3 編譯進 Wiki</span><div class="t"><div class="f" style="width:100%"></div></div><b>6</b></div>
+  <div class="bar"><span>N7 產生簡報</span><div class="t"><div class="f" style="width:100%"></div></div><b>6</b></div>
+  <div class="bar"><span>N6 整理大綱</span><div class="t"><div class="f" style="width:50%"></div></div><b>3</b></div>
+  <div class="bar"><span>檢查工具本身</span><div class="t"><div class="f" style="width:33.3%"></div></div><b>2</b></div>
+  <p class="who" style="margin-top:8px">N3 的 6 個：frontmatter 沒同步 3、引用還沒 ingest 的來源 1、寫得比來源多 2。N7 的 6 個：內容不在 Wiki 3、版面 3。N6 的 3 個：路徑不完整 2、要教的名詞 Wiki 沒定義 1。共同模式：<b>只要是 LLM「寫東西」的節點（N3、N7），就容易用自己的知識補洞。</b></p>
+
+  <h3>修正前後（第 6 頁、第 9 頁）</h3>
+  <div class="two">
+    <figure><img src="runs/shots-v1/slide-06.png" alt="v1 第 6 頁" loading="lazy"><figcaption>v1：三個名詞定義是 AI 自己補的，Wiki 裡沒有；頁碼被按鈕蓋住</figcaption></figure>
+    <figure><img src="runs/shots-v2/slide-06.png" alt="v2 第 6 頁" loading="lazy"><figcaption>v2：定義改成 Wiki embedding.md / chunking.md 的說法，頁尾多引用兩頁</figcaption></figure>
+    <figure><img src="runs/shots-v1/slide-09.png" alt="v1 第 9 頁" loading="lazy"><figcaption>v1：「1.9%（−67%）」斷成三行</figcaption></figure>
+    <figure><img src="runs/shots-v2/slide-09.png" alt="v2 第 9 頁" loading="lazy"><figcaption>v2：數值欄加寬、內容垂直置中</figcaption></figure>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  來源：S1 Karpathy (2026) · S2 Lewis et al. (2020) · S3 Gao et al. (2023) · S4 Anthropic (2024) · S5 Wikipedia · S6 DataCamp (2026) · S7 brtrx (2026)。Raw 層只存擷取重點，不轉載原文。
+</div></footer>
+</body>
+</html>

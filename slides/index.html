@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI 怎麼「記住」知識？RAG 與 LLM Wiki 入門</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@600;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f4efe6; --card:#fffdf8; --ink:#1d1b18; --muted:#6b655c; --line:#ddd3c3;
+  --rag:#1f6f78; --rag-soft:#dcecec; --wiki:#b5601a; --wiki-soft:#f6e3cf; --warn:#a8402c; --warn-soft:#f5dcd5;
+  --serif:"Noto Serif TC","Noto Serif CJK TC",serif; --sans:"Noto Sans TC","Noto Sans CJK TC",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#2a2723;font-family:var(--sans);color:var(--ink)}
+#viewport{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+#stage{width:1280px;height:720px;position:relative;transform-origin:center center;flex:none}
+.slide{position:absolute;inset:0;background:var(--paper);padding:56px 72px 64px;display:none;flex-direction:column;overflow:hidden}
+.slide.active{display:flex}
+.kicker{font-family:var(--mono);font-size:14px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;margin-bottom:10px}
+.kicker b{color:var(--rag)} .kicker i{font-style:normal;color:var(--wiki)}
+h2{font-family:var(--serif);font-weight:900;font-size:44px;line-height:1.2;margin-bottom:26px}
+h2 .r{color:var(--rag)} h2 .w{color:var(--wiki)}
+.content{flex:1;display:flex;flex-direction:column;justify-content:center;gap:20px;min-height:0;padding-bottom:28px}
+p,li{font-size:22px;line-height:1.6}
+.lead{font-size:26px;line-height:1.6}
+.muted{color:var(--muted)}
+.row{display:flex;gap:22px}
+.col{flex:1;min-width:0}
+.card{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:20px 22px}
+.card h3{font-size:24px;margin-bottom:8px}
+.card p{font-size:20px;line-height:1.55}
+.card.rag{border-color:var(--rag);background:var(--rag-soft)}
+.card.wiki{border-color:var(--wiki);background:var(--wiki-soft)}
+.card.warn{border-color:var(--warn);background:var(--warn-soft)}
+.tag{display:inline-block;font-family:var(--mono);font-size:13px;padding:2px 8px;border-radius:99px;border:1px solid var(--line);background:#fff;color:var(--muted);margin-left:4px;vertical-align:middle}
+.pill{display:inline-block;font-size:15px;font-weight:700;padding:3px 12px;border-radius:99px;color:#fff;background:var(--rag)}
+.pill.w{background:var(--wiki)}
+dfn{font-style:normal;font-weight:700;color:var(--rag)}
+footer.src{position:absolute;left:72px;right:220px;bottom:20px;display:flex;justify-content:space-between;align-items:center;font-size:14px;color:var(--muted);border-top:1px solid var(--line);padding-top:10px}
+footer.src a{color:var(--muted);font-family:var(--mono);font-size:13px;text-decoration:none;border-bottom:1px dotted var(--muted);margin-right:10px}
+footer.src a:hover{color:var(--ink)}
+footer.src .no{font-family:var(--mono)}
+#bar{position:fixed;top:0;left:0;height:4px;background:var(--wiki);transition:width .25s;z-index:5}
+#nav{position:fixed;right:18px;bottom:14px;display:flex;gap:6px;align-items:center;z-index:5;background:#ffffffd9;border-radius:10px;padding:4px}
+#count{font:600 14px var(--mono);padding:0 8px;color:var(--ink);min-width:64px;text-align:center}
+#nav button{font:600 16px var(--sans);background:transparent;border:0;border-radius:8px;padding:6px 12px;cursor:pointer;color:var(--ink)}
+#nav button:hover{background:var(--wiki-soft)}
+/* cover */
+.cover{justify-content:center;background:radial-gradient(circle at 85% 20%,var(--wiki-soft) 0,transparent 42%),radial-gradient(circle at 10% 90%,var(--rag-soft) 0,transparent 45%),var(--paper)}
+.cover h1{font-family:var(--serif);font-weight:900;font-size:76px;line-height:1.15;margin:10px 0 18px}
+.cover h1 em{font-style:normal;color:var(--wiki)}
+.cover .sub{font-size:30px;color:var(--rag);font-weight:700;margin-bottom:34px}
+.cover .meta{font-size:18px;color:var(--muted)}
+/* flow */
+.flow{display:flex;align-items:stretch;gap:0}
+.flow .step{flex:1;background:var(--card);border:1.5px solid var(--rag);border-radius:14px;padding:18px 16px;position:relative}
+.flow .step .n{font-family:var(--mono);font-weight:600;color:var(--rag);font-size:15px}
+.flow .step h3{font-size:24px;margin:4px 0 6px}
+.flow .step p{font-size:17px;line-height:1.5}
+.flow .arrow{width:34px;display:flex;align-items:center;justify-content:center;color:var(--rag);font-size:28px;font-weight:900;flex:none}
+.gloss{display:flex;gap:16px}
+.gloss .card{flex:1;padding:14px 18px}
+.gloss .card p{font-size:17px}
+/* bars */
+.bars{display:flex;flex-direction:column;gap:14px}
+.bar{display:grid;grid-template-columns:230px 1fr 190px;align-items:center;gap:14px;font-size:19px}
+.bar .track{height:30px;background:#e9e2d5;border-radius:6px;overflow:hidden}
+.bar .fill{height:100%;background:var(--rag);border-radius:6px}
+.bar .fill.base{background:#9a9286}
+.bar .v{font-family:var(--mono);font-weight:600}
+/* layers */
+.layers{display:flex;flex-direction:column;gap:12px}
+.layer{display:grid;grid-template-columns:170px 1fr 190px;align-items:center;gap:18px;border-radius:14px;padding:16px 22px;border:1.5px solid var(--line);background:var(--card)}
+.layer .nm{font-family:var(--mono);font-weight:600;font-size:22px}
+.layer p{font-size:19px}
+.layer .an{font-size:16px;color:var(--wiki);font-weight:700;text-align:right}
+.layer.s{border-color:var(--ink)} .layer.w{border-color:var(--wiki);background:var(--wiki-soft)} .layer.r{border-color:#9a9286}
+/* table */
+table{border-collapse:collapse;width:100%;font-size:19px}
+th,td{border-bottom:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+th{font-size:16px;color:var(--muted);font-weight:700}
+td:first-child{font-weight:700;width:170px}
+th.r,td.r{color:var(--rag)} th.w,td.w{color:var(--wiki)}
+td.r,td.w{color:var(--ink)}
+/* quiz */
+.q{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:14px 20px}
+.q h3{font-size:20px;margin-bottom:8px}
+.q .opts{display:flex;gap:10px;flex-wrap:wrap}
+.q button{font:500 17px var(--sans);padding:7px 14px;border-radius:10px;border:1.5px solid var(--line);background:#fff;cursor:pointer;color:var(--ink)}
+.q button.ok{border-color:var(--rag);background:var(--rag-soft)}
+.q button.no{border-color:var(--warn);background:var(--warn-soft)}
+.q .why{font-size:16px;color:var(--muted);margin-top:8px;min-height:24px}
+ol.src{columns:2;column-gap:36px;padding-left:22px}
+ol.src li{font-size:17px;line-height:1.5;margin-bottom:6px;break-inside:avoid}
+ol.src a{color:var(--ink)}
+.big{font-family:var(--serif);font-weight:900;font-size:34px;line-height:1.35}
+@media print{
+  html,body{background:#fff}
+  #viewport{position:static;display:block}
+  #stage{transform:none!important;width:auto;height:auto}
+  .slide{display:flex!important;position:relative;width:1280px;height:720px;page-break-after:always}
+  #nav,#bar{display:none}
+}
+</style>
+</head>
+<body>
+<div id="bar"></div>
+<div id="viewport"><div id="stage">
+
+<!-- 1 封面 -->
+<section class="slide cover" data-wiki="overview.md index.md" data-src="S1 S2 S5">
+  <div class="kicker">生成式 AI 課程 · LLM Wiki 教學簡報</div>
+  <h1>AI 怎麼「記住」<em>知識</em>？</h1>
+  <div class="sub">RAG 與 LLM Wiki 入門</div>
+  <p class="lead">兩種把知識放在模型外面的方法：<span class="pill">RAG</span> 與 <span class="pill w">LLM Wiki</span></p>
+  <p class="meta" data-nocheck>連顥哲 · 2026/11/23 · 內容全部來自 7 個來源編成的 LLM Wiki</p>
+</section>
+
+<!-- 2 學習目標 -->
+<section class="slide" data-wiki="syntheses/slide-outline.md" data-src="S3 S5 S6">
+  <div class="kicker">開始之前</div>
+  <h2>今天的學習目標</h2>
+  <div class="content">
+    <p class="lead muted">看完這份簡報，你應該能：</p>
+    <div class="row">
+      <div class="card col"><h3>① 為什麼</h3><p>說得出 LLM 為什麼需要「外部知識」</p></div>
+      <div class="card col rag"><h3>② RAG</h3><p>能解釋 RAG 的四個步驟</p></div>
+      <div class="card col wiki"><h3>③ LLM Wiki</h3><p>說得出 LLM Wiki 和 RAG 差在哪、各自的風險</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 LLM 的毛病 -->
+<section class="slide" data-wiki="concepts/llm-limitations.md" data-src="S2 S3 S5">
+  <div class="kicker">Part 1 · 問題</div>
+  <h2>LLM 很聰明，但有四個毛病</h2>
+  <div class="content">
+    <div class="row">
+      <div class="card col warn"><h3>幻覺</h3><p>會自信地說出錯誤的內容</p></div>
+      <div class="card col warn"><h3>知識過時</h3><p>只知道訓練時看過的資料</p></div>
+    </div>
+    <div class="row">
+      <div class="card col warn"><h3>難以追溯</h3><p>說不出答案是怎麼來的</p></div>
+      <div class="card col warn"><h3>難以更新</h3><p>知識壓在模型參數裡，要改很麻煩</p></div>
+    </div>
+    <p class="lead">共同的解法：<b>把知識放在模型外面</b>。今天介紹兩種做法。</p>
+  </div>
+</section>
+
+<!-- 4 比喻 -->
+<section class="slide" data-wiki="syntheses/slide-outline.md overview.md" data-src="比喻">
+  <div class="kicker">Part 1 · 一個比喻看懂今天</div>
+  <h2><span class="r">圖書館員</span> vs <span class="w">百科全書</span></h2>
+  <div class="content">
+    <div class="row">
+      <div class="card col rag"><h3>RAG ＝ 圖書館員</h3><p>你每問一次，他就跑去書庫翻原書，找到相關段落，再根據那幾段回答你。</p></div>
+      <div class="card col wiki"><h3>LLM Wiki ＝ 百科全書</h3><p>編輯平時就把書讀完、整理成互相連結的條目；你來問時，直接翻條目。</p></div>
+    </div>
+    <div class="card"><p>對照：書庫裡的原書 ＝ <b>raw</b>　｜　百科條目 ＝ <b>wiki</b>　｜　編輯手冊 ＝ <b>schema</b>（後面會講）</p></div>
+  </div>
+</section>
+
+<!-- 5 RAG 是什麼 -->
+<section class="slide" data-wiki="concepts/rag.md concepts/parametric-memory.md" data-src="S2 S5">
+  <div class="kicker"><b>Part 2 · RAG</b></div>
+  <h2><span class="r">RAG</span> 是什麼？</h2>
+  <div class="content">
+    <p class="big">回答之前，先去外部資料找相關內容，<br>再根據找到的內容回答。</p>
+    <p class="muted">Retrieval-Augmented Generation，檢索增強生成。名稱出自 Lewis 等人 2020 年的論文（NeurIPS 2020）。</p>
+    <div class="row">
+      <div class="card col"><h3>參數記憶</h3><p>訓練時「壓」進模型參數的知識（模型本身）</p></div>
+      <div class="arrow" style="font-size:40px;font-weight:900;align-self:center;color:var(--rag)">＋</div>
+      <div class="card col rag"><h3>非參數記憶</h3><p>放在模型外面的資料（論文用 Wikipedia 的向量索引），用檢索器去查</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 6 RAG 四步驟 -->
+<section class="slide" data-wiki="concepts/rag.md concepts/embedding.md concepts/chunking.md" data-src="S4 S5">
+  <div class="kicker"><b>Part 2 · RAG</b></div>
+  <h2>RAG 怎麼運作？四個步驟</h2>
+  <div class="content">
+    <div class="flow">
+      <div class="step"><div class="n">① 事先做</div><h3>索引</h3><p>把資料切成 chunk、轉成 embedding，存進可依意思搜尋的資料庫</p></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="n">② 被問時</div><h3>檢索</h3><p>找出跟問題最相關的前 K 個 chunk</p></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="n">③</div><h3>增強</h3><p>把找到的內容加進問題，當作上下文</p></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="n">④</div><h3>生成</h3><p>LLM 根據問題＋找到的內容寫出回答</p></div>
+    </div>
+    <div class="gloss">
+      <div class="card"><p><dfn>chunk</dfn>：長文件切成的小段，通常幾百個 token</p></div>
+      <div class="card"><p><dfn>embedding</dfn>：把文字轉成一串數字（向量），意思相近的文字，數字也相近</p></div>
+      <div class="card"><p><dfn>向量資料庫</dfn>：存放 embedding，能快速找出與問題「意思最接近」的內容</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 7 好處與限制 -->
+<section class="slide" data-wiki="concepts/rag.md" data-src="S1 S5">
+  <div class="kicker"><b>Part 2 · RAG</b></div>
+  <h2>RAG 的好處與限制</h2>
+  <div class="content">
+    <div class="row">
+      <div class="card col rag"><h3>好處</h3>
+        <p>✓ 減少幻覺</p><p>✓ 加入新知識，不必重新訓練模型</p><p>✓ 回答可以附上來源，方便查證</p></div>
+      <div class="card col warn"><h3>限制</h3>
+        <p>✗ 不能「防止」幻覺，只能減少</p><p>✗ 資訊不夠時，模型還是可能硬答</p><p>✗ 句子被斷章取義、來源互相矛盾時會答錯</p><p>✗ 每次都重新找，問過的東西不會累積</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 8 切塊盲點 -->
+<section class="slide" data-wiki="concepts/chunking.md" data-src="S4">
+  <div class="kicker"><b>Part 2 · RAG 的盲點</b></div>
+  <h2>切成小塊，上下文就不見了</h2>
+  <div class="content">
+    <div class="card"><p class="muted">使用者問：</p><p class="lead"><b>「ACME 公司 2023 年第二季營收成長多少？」</b></p></div>
+    <div class="card warn"><p class="muted">資料庫裡最相關的 chunk：</p><p class="lead">「公司營收比上一季成長 3%。」</p>
+      <p style="margin-top:6px">⚠️ 哪家公司？哪一季？這段文字自己看不出來 → 可能檢索不到，或被誤用</p></div>
+    <p class="lead">原因：RAG 把文件切成幾百個 token 的 chunk，<b>切開時把脈絡也切掉了</b>。</p>
+  </div>
+</section>
+
+<!-- 9 Contextual Retrieval -->
+<section class="slide" data-wiki="concepts/contextual-retrieval.md concepts/rag-paradigms.md" data-src="S3 S4">
+  <div class="kicker"><b>Part 2 · RAG 的改良</b></div>
+  <h2>改良：先替每個 chunk 補上脈絡</h2>
+  <div class="content">
+    <p>Contextual Retrieval：讓 AI 讀整份文件，替每個 chunk 寫 50–100 個 token 的說明再建索引。<br><span class="muted">前 20 個 chunk 裡找不到相關內容的比例（越低越好）：</span></p>
+    <div class="bars">
+      <div class="bar"><span>基本 RAG</span><div class="track"><div class="fill base" style="width:100%"></div></div><span class="v">5.7%</span></div>
+      <div class="bar"><span>＋脈絡 embedding</span><div class="track"><div class="fill" style="width:64.9%"></div></div><span class="v">3.7%</span></div>
+      <div class="bar"><span>＋脈絡 BM25</span><div class="track"><div class="fill" style="width:50.9%"></div></div><span class="v">2.9%</span></div>
+      <div class="bar"><span>＋reranking</span><div class="track"><div class="fill" style="width:33.3%"></div></div><span class="v">1.9%（−67%）</span></div>
+    </div>
+    <div class="row">
+      <div class="card col"><p>RAG 一路演進：Naive → Advanced → Modular RAG</p></div>
+      <div class="card col"><p>知識庫小於 200,000 token（約 500 頁）時，直接整份放進 prompt 就好</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 10 LLM Wiki 換個思路 -->
+<section class="slide" data-wiki="concepts/llm-wiki.md" data-src="S1 S6">
+  <div class="kicker"><i>Part 3 · LLM Wiki</i></div>
+  <h2><span class="w">LLM Wiki</span>：換個思路，讓知識會累積</h2>
+  <div class="content">
+    <div class="row">
+      <div class="card col rag"><h3>RAG</h3><p>每次被問，都從原始文件<b>重新找</b>。<br>問過的東西不會累積。</p></div>
+      <div class="card col wiki"><h3>LLM Wiki</h3><p>資料<b>進來時</b>就讓 LLM 整理成互相連結的 wiki。<br>知識「編譯一次、之後持續更新」。</p></div>
+    </div>
+    <div class="card"><p><b>為什麼現在才可行？</b>人類放棄維護 wiki，是因為整理太累；LLM 不怕做整理工作。</p></div>
+    <p class="muted">Karpathy 在 2026 年 4 月提出；到 2026 年 7 月，多數實作仍是原型。</p>
+  </div>
+</section>
+
+<!-- 11 三層架構 -->
+<section class="slide" data-wiki="concepts/llm-wiki.md syntheses/slide-outline.md" data-src="S1">
+  <div class="kicker"><i>Part 3 · LLM Wiki</i></div>
+  <h2>三層架構</h2>
+  <div class="content">
+    <div class="layers">
+      <div class="layer s"><span class="nm">Schema</span><p>CLAUDE.md / AGENTS.md：寫下結構、慣例與工作流程，人和 LLM 一起修</p><span class="an">編輯手冊</span></div>
+      <div class="layer w"><span class="nm">Wiki</span><p>LLM 寫的摘要頁、概念頁、比較頁，由 LLM 負責維護</p><span class="an">百科條目</span></div>
+      <div class="layer r"><span class="nm">Raw</span><p>原始資料，LLM 只讀、不改</p><span class="an">書庫裡的原書</span></div>
+    </div>
+    <p class="muted">分工：人負責挑來源、問問題；其餘的閱讀、撰寫、整理交給 LLM。</p>
+  </div>
+</section>
+
+<!-- 12 三個操作 -->
+<section class="slide" data-wiki="concepts/wiki-operations.md" data-src="S1 S6">
+  <div class="kicker"><i>Part 3 · LLM Wiki</i></div>
+  <h2>三個操作：Ingest · Query · Lint</h2>
+  <div class="content">
+    <div class="row">
+      <div class="card col wiki"><h3>Ingest 攝入</h3><p>讀新來源 → <b>先跟人討論重點</b> → 寫摘要頁 → 更新相關概念頁、index、log。一個來源可能動到 10–15 頁。</p></div>
+      <div class="card col wiki"><h3>Query 查詢</h3><p>先讀 index，再讀相關頁，附引用回答。好的答案<b>存回 wiki</b>，讓探索也能累積。</p></div>
+      <div class="card col wiki"><h3>Lint 健康檢查</h3><p>定期找矛盾、過時說法、孤兒頁、缺少的連結。</p></div>
+    </div>
+    <div class="card"><p><b>index.md</b> 是目錄、<b>log.md</b> 是只往下追加的紀錄。約 100 個來源以內，靠 index 就夠，不需要向量資料庫。</p></div>
+  </div>
+</section>
+
+<!-- 13 對照表 -->
+<section class="slide" data-wiki="comparisons/rag-vs-llm-wiki.md" data-src="S6">
+  <div class="kicker">Part 4 · 比較</div>
+  <h2><span class="r">RAG</span> vs <span class="w">LLM Wiki</span></h2>
+  <div class="content">
+    <table>
+      <tr><th>面向</th><th class="r">RAG（圖書館員）</th><th class="w">LLM Wiki（百科全書）</th></tr>
+      <tr><td>什麼時候做事</td><td class="r">被問的時候</td><td class="w">資料進來的時候</td></tr>
+      <tr><td>留下什麼</td><td class="r">什麼都不留</td><td class="w">整理好的 markdown 頁面</td></tr>
+      <tr><td>新鮮度</td><td class="r">直接讀最新資料</td><td class="w">要重新 ingest，會落後</td></tr>
+      <tr><td>跨來源綜合</td><td class="r">可能漏掉跨 chunk 的關聯</td><td class="w">綜合做一次並經過審視</td></tr>
+      <tr><td>維護</td><td class="r">建好索引後幾乎不用</td><td class="w">需要 lint、矛盾檢查</td></tr>
+      <tr><td>擴展性</td><td class="r">可預期的搜尋問題</td><td class="w">變大後要靠索引或搜尋維持一致</td></tr>
+    </table>
+    <p class="lead">兩者<b>互補</b>，不是取代：wiki 變大後，也可以對 wiki 跑 RAG。</p>
+  </div>
+</section>
+
+<!-- 14 風險 -->
+<section class="slide" data-wiki="concepts/llm-wiki-risks.md concepts/ingestion-bias.md" data-src="S6 S7">
+  <div class="kicker">Part 4 · LLM Wiki 的代價</div>
+  <h2>LLM Wiki 的四個風險</h2>
+  <div class="content">
+    <div class="row">
+      <div class="card col warn"><h3>過時</h3><p>來源更新了要重新 ingest</p></div>
+      <div class="card col warn"><h3>知識漂移</h3><p>每次 ingest 帶進小錯，數百次後累積</p></div>
+      <div class="card col warn"><h3>查證困難</h3><p>每句話都是模型寫的</p></div>
+      <div class="card col warn"><h3>Ingestion bias</h3><p>先進來的來源決定了框架</p></div>
+    </div>
+    <div class="card"><p><b>Ingestion bias 為什麼麻煩？</b>它不是斷鏈、缺頁這種結構問題，lint 抓不到。<br>補救：分批、用隨機順序 lint；換順序從 raw 重建；請 AI 反駁目前的框架。</p></div>
+  </div>
+</section>
+
+<!-- 15 實例 -->
+<section class="slide" data-wiki="index.md log.md concepts/ingestion-bias.md" data-src="討論">
+  <div class="kicker">Part 5 · 實例</div>
+  <h2>這份簡報本身，就是用 LLM Wiki 做的</h2>
+  <div class="content">
+    <div class="flow">
+      <div class="step"><h3>7 個來源</h3><p>論文、官方部落格、維基、gist</p></div><div class="arrow">→</div>
+      <div class="step"><h3>討論</h3><p>每篇列重點，由人勾選要強調什麼</p></div><div class="arrow">→</div>
+      <div class="step"><h3>Wiki</h3><p>摘要頁、概念頁、比較頁，每句標來源</p></div><div class="arrow">→</div>
+      <div class="step"><h3>查詢→大綱</h3><p>大綱存回 wiki</p></div><div class="arrow">→</div>
+      <div class="step"><h3>簡報</h3><p>每頁下方標出對應的 wiki 頁</p></div>
+    </div>
+    <div class="card"><p>ingest 順序刻意安排：S5 → S2 → S3 → S4 → S1 → S6 → S7（先 RAG 基礎、再 LLM Wiki、最後放批評）。</p></div>
+  </div>
+</section>
+
+<!-- 16 小測驗 -->
+<section class="slide" data-wiki="concepts/rag.md comparisons/rag-vs-llm-wiki.md concepts/ingestion-bias.md" data-src="S5 S6 S7">
+  <div class="kicker">Part 6 · 小測驗</div>
+  <h2>考考你（點選答案）</h2>
+  <div class="content" style="gap:12px">
+    <div class="q" data-answer="b"><h3>1. RAG 的「增強」（augmentation）指的是？</h3>
+      <div class="opts"><button data-k="a">重新訓練模型</button><button data-k="b">把找到的內容加進問題</button><button data-k="c">把文件切成 chunk</button></div>
+      <div class="why" data-why="增強＝把檢索到的內容加進問題，當作上下文。切 chunk 是「索引」步驟。"></div></div>
+    <div class="q" data-answer="a"><h3>2. 跟 RAG 比，LLM Wiki 多了哪個代價？</h3>
+      <div class="opts"><button data-k="a">需要 lint、矛盾檢查等維護</button><button data-k="b">不能附來源</button><button data-k="c">一定要用向量資料庫</button></div>
+      <div class="why" data-why="RAG 建好索引後幾乎不用維護；LLM Wiki 需要 lint 與矛盾檢查。"></div></div>
+    <div class="q" data-answer="c"><h3>3. Ingestion bias 是什麼？</h3>
+      <div class="opts"><button data-k="a">來源太多塞爆硬碟</button><button data-k="b">embedding 算錯</button><button data-k="c">先進來的來源決定了 wiki 的框架</button></div>
+      <div class="why" data-why="一次 ingest 一篇時，最早的來源決定用詞與框架，後來的來源只被塞進去。"></div></div>
+  </div>
+</section>
+
+<!-- 17 回顧 -->
+<section class="slide" data-wiki="overview.md index.md" data-src="S1 S2 S3 S4 S5 S6 S7">
+  <div class="kicker">總結</div>
+  <h2>三句話帶走</h2>
+  <div class="content" style="gap:14px">
+    <div class="row">
+      <div class="card col rag"><p><b>RAG</b>：被問時才去找，像圖書館員。簡單、新鮮，但知識不累積，切塊會丟脈絡。</p></div>
+      <div class="card col wiki"><p><b>LLM Wiki</b>：資料進來就整理好，像百科全書。會累積，但要維護、會過時、有順序偏誤。</p></div>
+      <div class="card col"><p><b>兩者互補</b>：不是誰取代誰。</p></div>
+    </div>
+    <p class="muted">延伸閱讀（本 Wiki 的 7 個來源）：</p>
+    <ol class="src">
+      <li><a href="https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f">S1 Karpathy (2026) LLM Wiki</a></li>
+      <li><a href="https://arxiv.org/abs/2005.11401">S2 Lewis et al. (2020) RAG 原始論文</a></li>
+      <li><a href="https://arxiv.org/abs/2312.10997">S3 Gao et al. (2023) RAG 綜述</a></li>
+      <li><a href="https://www.anthropic.com/news/contextual-retrieval">S4 Anthropic (2024) Contextual Retrieval</a></li>
+      <li><a href="https://en.wikipedia.org/wiki/Retrieval-augmented_generation">S5 Wikipedia：RAG</a></li>
+      <li><a href="https://www.datacamp.com/blog/llm-wiki">S6 DataCamp (2026) LLM Wiki</a></li>
+      <li><a href="https://gist.github.com/brtrx/ba595fd01e344d797cb66d34d982ecad">S7 brtrx (2026) Bias-Aware Lint</a></li>
+    </ol>
+  </div>
+</section>
+
+</div></div>
+<div id="nav"><button id="prev" aria-label="上一頁">←</button><span id="count">1 / 17</span><button id="next" aria-label="下一頁">→</button></div>
+<script>
+(function(){
+  const WIKI_BASE = "https://github.com/xox231213xox-a11y/rag-vs-llm-wiki/blob/main/wiki/";
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const stage = document.getElementById('stage');
+  const bar = document.getElementById('bar');
+  // 頁尾：自動列出這頁對應的 wiki 頁面與來源
+  slides.forEach((s, i) => {
+    const f = document.createElement('footer');
+    f.className = 'src';
+    const pages = (s.dataset.wiki || '').split(/\s+/).filter(Boolean);
+    const srcs = (s.dataset.src || '').split(/\s+/).filter(Boolean);
+    const left = document.createElement('span');
+    left.append('📚 Wiki：');
+    pages.forEach(p => { const a = document.createElement('a'); a.href = WIKI_BASE + p; a.target = '_blank'; a.textContent = p; left.append(a); });
+    srcs.forEach(t => { const g = document.createElement('span'); g.className = 'tag'; g.textContent = '[' + t + ']'; left.append(g); });
+    const right = document.createElement('span'); right.className = 'no'; right.textContent = '← → 鍵切換';
+    f.append(left, right); s.append(f);
+  });
+  let cur = 0;
+  function fit(){ const k = Math.min(window.innerWidth / 1280, window.innerHeight / 720); stage.style.transform = 'scale(' + k + ')'; }
+  function show(n){
+    cur = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach((s, i) => s.classList.toggle('active', i === cur));
+    bar.style.width = ((cur + 1) / slides.length * 100) + '%';
+    document.getElementById('count').textContent = (cur + 1) + ' / ' + slides.length;
+    if (location.hash !== '#' + (cur + 1)) history.replaceState(null, '', '#' + (cur + 1));
+  }
+  document.getElementById('prev').onclick = () => show(cur - 1);
+  document.getElementById('next').onclick = () => show(cur + 1);
+  document.addEventListener('keydown', e => {
+    if (['ArrowRight', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); show(cur + 1); }
+    if (['ArrowLeft', 'PageUp'].includes(e.key)) { e.preventDefault(); show(cur - 1); }
+    if (e.key === 'Home') show(0);
+    if (e.key === 'End') show(slides.length - 1);
+  });
+  document.querySelectorAll('.q').forEach(q => {
+    q.querySelectorAll('button').forEach(b => b.onclick = () => {
+      const ok = b.dataset.k === q.dataset.answer;
+      q.querySelectorAll('button').forEach(x => x.classList.remove('ok', 'no'));
+      b.classList.add(ok ? 'ok' : 'no');
+      const w = q.querySelector('.why'); w.textContent = (ok ? '✓ 答對！' : '✗ 再想想。') + w.dataset.why;
+    });
+  });
+  window.addEventListener('resize', fit);
+  window.addEventListener('hashchange', () => { const n = (parseInt(location.hash.slice(1), 10) || 1) - 1; if (n !== cur) show(n); });
+  fit();
+  show((parseInt(location.hash.slice(1), 10) || 1) - 1);
+})();
+</script>
+</body>
+</html>
