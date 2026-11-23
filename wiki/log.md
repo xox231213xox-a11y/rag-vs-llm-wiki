@@ -76,3 +76,7 @@
 ## [2026-11-23] build | 產生簡報 v2＋檢查
 - 第 6 頁改引用 embedding.md、chunking.md；第 11 頁對齊 wiki 用字；修 3 個版面問題。
 - check_slides.py（C1–C7）PASS、截圖版面 PASS、人工看截圖 OK。紀錄：runs/08～12。
+
+## [2026-11-23] publish | 發布到 GitHub Pages（N9）
+- 總覽頁：https://xox231213xox-a11y.github.io/rag-vs-llm-wiki/ ；簡報：/slides/
+- 線上確認：鍵盤／按鈕翻頁、#頁碼連結、小測驗、頁尾 Wiki 連結（GitHub 上都存在）、Google 字型、修正前後截圖都正常。
